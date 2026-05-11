@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muhith dev Host VIP</title>
+    <style>
+        body { background: #000; color: #ff0000; font-family: 'Courier New', monospace; padding: 15px; margin: 0; display: flex; justify-content: center; }
+        .panel { width: 100%; max-width: 450px; border: 2px solid #ff0000; border-radius: 12px; padding: 20px; box-shadow: 0 0 20px #ff000077; background: #050505; }
+        .header { border-bottom: 1px solid #440000; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
+        h2 { text-shadow: 0 0 10px #ff0000; margin: 5px 0; font-size: 22px; }
+        .status-on { color: #00ff00; font-size: 12px; font-weight: bold; }
+        
+        .terminal { background: #000; border: 1px solid #330000; height: 180px; padding: 10px; overflow-y: auto; color: #00ff41; font-size: 12px; border-radius: 5px; margin-bottom: 10px; }
+        input[type="text"] { width: 100%; background: #111; border: 1px solid #ff0000; color: #fff; padding: 10px; box-sizing: border-box; outline: none; margin-bottom: 15px; }
+        
+        .file-manager { border: 1px dashed #ff0000; padding: 10px; border-radius: 8px; text-align: center; }
+        .btn-upload { background: #ff0000; color: #fff; border: none; padding: 10px 15px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .upload-status { font-size: 11px; color: #fff; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div class="header">
+            <h2>☠️ Muhith dev Host VIP</h2>
+            <span class="status-on">[ SYSTEM ONLINE ]</span>
+        </div>
+
+        <div class="terminal" id="term">>_ Welcome Muhith! System Connected to Backend...</div>
+        <input type="text" id="cmd" placeholder="Type server command & hit Enter..." onkeydown="handleCmd(event)">
+
+        <div class="file-manager">
+            <span style="font-weight: bold;">📁 ZIP UPLOADER (RAILWAY)</span>
+            <input type="file" id="zipFile" accept=".zip" hidden onchange="uploadToServer()">
+            <button class="btn-upload" onclick="document.getElementById('zipFile').click()">UPLOAD ZIP TO SERVER</button>
+            <div id="upStatus" class="upload-status">No file uploaded</div>
+        </div>
+    </div>
+
+    <script>
+        const term = document.getElementById('term');
+
+        // কনসোলে মেসেজ দেখানোর ফাংশন
+        function log(msg, color="#00ff41") {
+            term.innerHTML += `<br><span style="color:${color}">> ${msg}</span>`;
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // কমান্ড সার্ভারে পাঠানোর ফাংশন (API Call)
+        async function handleCmd(e) {
+            if (e.key === 'Enter') {
+                const command = e.target.value;
+                log(command, "#fff"); // আপনার লেখা কমান্ড সাদা রঙে দেখাবে
+                
+                try {
+                    const response = await fetch('/api/cmd', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command })
+                    });
+                    const data = await response.json();
+                    log(data.output); // সার্ভারের রিপ্লাই সবুজ রঙে দেখাবে
+                } catch (err) {
+                    log("Error: Could not connect to server!", "#ff0000");
+                }
+                
+                e.target.value = '';
+            }
+        }
+
+        // ফাইল সত্যি সত্যি সার্ভারে আপলোড করার ফাংশন
+        async function uploadToServer() {
+            const fileInput = document.getElementById('zipFile');
+            const status = document.getElementById('upStatus');
+            
+            if (fileInput.files.length === 0) return;
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('zipFile', file);
+
+            status.innerText = "Uploading " + file.name + "...";
+            log("Sending " + file.name + " to Railway storage...");
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    status.innerText = "✅ " + file.name + " Uploaded!";
+                    log("Server: File received successfully.", "#00ff00");
+                } else {
+                    status.innerText = "❌ Upload Failed!";
+                    log("Server Error: Upload rejected.", "#ff0000");
+                }
+            } catch (err) {
+                status.innerText = "❌ Connection Error!";
+                log("Fatal Error: Server unreachable.", "#ff0000");
+            }
+        }
+    </script>
+</body>
+</html>
